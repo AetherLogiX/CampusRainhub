@@ -12,14 +12,16 @@ USE rainhub_db;
 -- 1用户信息表 (users)
 CREATE TABLE IF NOT EXISTS users (
     user_id VARCHAR(20) NOT NULL COMMENT '学号/工号',
-    password VARCHAR(20) NOT NULL COMMENT '登录密码',
+    password VARCHAR(20) NULL COMMENT '登录密码 (首次登录为NULL，需要激活设置密码)',
     real_name VARCHAR(20) NOT NULL COMMENT '真实姓名',
     role INT NOT NULL DEFAULT 0 COMMENT '角色标识 (0:学生, 1:教职工, 9:管理员)',
     credit DECIMAL(10, 2) NOT NULL DEFAULT 0.00 COMMENT '账户余额 (单位: 元)',
     avatar_id INT NOT NULL DEFAULT 1 COMMENT '头像资源索引 ID',
+    is_active TINYINT(1) NOT NULL DEFAULT 0 COMMENT '是否已激活 (0:未激活需首次设置密码, 1:已激活)',
     PRIMARY KEY (user_id),
     INDEX idx_role (role),
-    INDEX idx_credit (credit)
+    INDEX idx_credit (credit),
+    INDEX idx_is_active (is_active)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='用户信息表';
 
 
