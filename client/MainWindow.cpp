@@ -229,6 +229,24 @@ QWidget* MainWindow::createFirstLoginPage()
     subtitle->setStyleSheet("font-size:14px; color:#7f8c8d;");
     subtitle->setAlignment(Qt::AlignCenter);
 
+    // 显示用户信息（只读）
+    auto *infoLayout = new QVBoxLayout();
+    infoLayout->setAlignment(Qt::AlignHCenter);
+    infoLayout->setSpacing(8);
+    
+    auto *userInfoLabel = new QLabel(page);
+    userInfoLabel->setStyleSheet("font-size:16px; color:#34495e;");
+    userInfoLabel->setAlignment(Qt::AlignCenter);
+    // 使用lambda更新显示的用户信息
+    auto updateUserInfo = [userInfoLabel, this]() {
+        QString infoText = tr("学号/工号：%1\n姓名：%2")
+            .arg(m_tempUserId.isEmpty() ? tr("未知") : m_tempUserId)
+            .arg(m_tempUserName.isEmpty() ? tr("未知") : m_tempUserName);
+        userInfoLabel->setText(infoText);
+    };
+    updateUserInfo();
+    infoLayout->addWidget(userInfoLabel);
+
     auto *form = new QFormLayout();
     form->setLabelAlignment(Qt::AlignRight);
     form->setFormAlignment(Qt::AlignHCenter);
@@ -263,7 +281,9 @@ QWidget* MainWindow::createFirstLoginPage()
 
     layout->addWidget(title, 0, Qt::AlignCenter);
     layout->addWidget(subtitle, 0, Qt::AlignCenter);
-    layout->addSpacing(20);
+    layout->addSpacing(10);
+    layout->addLayout(infoLayout);
+    layout->addSpacing(10);
     layout->addLayout(form);
     layout->addWidget(btnSubmit, 0, Qt::AlignCenter);
     layout->addWidget(btnBack, 0, Qt::AlignCenter);
@@ -278,30 +298,75 @@ QWidget* MainWindow::createLoginPage()
     layout->setContentsMargins(40, 40, 40, 40);
     layout->setSpacing(16);
 
-    m_loginRoleLabel = new QLabel(tr("请选择身份"), page);
+    m_loginRoleLabel = new QLabel(tr("请输入密码"), page);
     m_loginRoleLabel->setStyleSheet("font-size:18px; font-weight:600;");
+    m_loginRoleLabel->setAlignment(Qt::AlignCenter);
+
+    // 显示用户信息（只读）
+    auto *infoLayout = new QVBoxLayout();
+    infoLayout->setAlignment(Qt::AlignHCenter);
+    infoLayout->setSpacing(8);
+    
+    auto *userInfoLabel = new QLabel(page);
+    userInfoLabel->setStyleSheet("font-size:16px; color:#34495e;");
+    userInfoLabel->setAlignment(Qt::AlignCenter);
+    // 使用lambda更新显示的用户信息
+    auto updateUserInfo = [userInfoLabel, this]() {
+        QString infoText = tr("学号/工号：%1\n姓名：%2")
+            .arg(m_tempUserId.isEmpty() ? tr("未知") : m_tempUserId)
+            .arg(m_tempUserName.isEmpty() ? tr("未知") : m_tempUserName);
+        userInfoLabel->setText(infoText);
+    };
+    updateUserInfo();
+    infoLayout->addWidget(userInfoLabel);
 
     auto *form = new QFormLayout();
     form->setLabelAlignment(Qt::AlignRight);
     form->setFormAlignment(Qt::AlignHCenter);
     form->setVerticalSpacing(12);
-    m_inputUser = new QLineEdit(page);
-    m_inputName = new QLineEdit(page);
+    
+    // 非首次登录只需要密码输入框
     m_inputPass = new QLineEdit(page);
     m_inputPass->setEchoMode(QLineEdit::Password);
-    m_inputUser->setPlaceholderText(tr("请输入学号/工号"));
-    m_inputName->setPlaceholderText(tr("请输入姓名（与数据库一致）"));
     m_inputPass->setPlaceholderText(tr("请输入密码"));
-    form->addRow(tr("账号："), m_inputUser);
-    form->addRow(tr("姓名："), m_inputName);
+    m_inputPass->setFixedWidth(300);
     form->addRow(tr("密码："), m_inputPass);
 
     auto *btnLogin = new QPushButton(tr("登录"), page);
     btnLogin->setFixedWidth(160);
     connect(btnLogin, &QPushButton::clicked, this, [this] {
-        if (performLogin()) {
-            switchPage(Page::Dashboard);
+        // 使用临时保存的用户信息进行登录
+        if (m_tempUserId.isEmpty() || m_tempUserName.isEmpty()) {
+            QMessageBox::warning(this, tr("错误"), tr("用户信息丢失，请重新输入。"));
+            switchPage(Page::UserInput);
+            return;
         }
+
+        const QString password = m_inputPass ? m_inputPass->text() : QString();
+        if (password.isEmpty()) {
+            QMessageBox::warning(this, tr("提示"), tr("请输入密码"));
+            return;
+        }
+
+        if (!DatabaseManager::init()) {
+            QMessageBox::critical(this, tr("数据库错误"), tr("无法连接到本地 MySQL，请检查服务是否已启动。"));
+            return;
+        }
+
+        // 调用密码校验逻辑
+        auto record = DatabaseManager::fetchUserByIdAndNameAndPassword(m_tempUserId, m_tempUserName, password);
+        if (!record) {
+            QMessageBox::warning(this, tr("登录失败"), tr("密码错误，请检查输入。"));
+            return;
+        }
+
+        m_currentRole = (record->role == 1) ? Role::Staff : Role::Student;
+        m_currentUser = std::make_unique<User>(record->userId, record->realName, record->credit, record->role);
+
+        updateRoleLabel();
+        updateProfileFromUser();
+        QMessageBox::information(this, tr("登录成功"), tr("已从数据库加载用户信息。"));
+        switchPage(Page::Dashboard);
     });
 
     auto *btnReset = new QPushButton(tr("修改密码"), page);
@@ -317,6 +382,9 @@ QWidget* MainWindow::createLoginPage()
     });
 
     layout->addWidget(m_loginRoleLabel, 0, Qt::AlignCenter);
+    layout->addSpacing(10);
+    layout->addLayout(infoLayout);
+    layout->addSpacing(10);
     layout->addLayout(form);
     layout->addWidget(btnLogin, 0, Qt::AlignCenter);
     layout->addWidget(btnReset, 0, Qt::AlignCenter);
@@ -412,12 +480,38 @@ QWidget* MainWindow::createResetPwdPage()
 QWidget* MainWindow::createDashboardPage()
 {
     auto *page = new QWidget(this);
-    auto *layout = new QVBoxLayout(page);
-    layout->setAlignment(Qt::AlignCenter);
-    layout->setSpacing(18);
+    auto *outerLayout = new QVBoxLayout(page);
+    outerLayout->setContentsMargins(16, 16, 16, 16);
+    outerLayout->setSpacing(0);
 
+    // 顶部栏：标题和退出登录按钮
+    auto *topBar = new QHBoxLayout();
+    topBar->setContentsMargins(0, 0, 0, 0);
+    
     auto *title = new QLabel(tr("NUIST智能雨具系统"), page);
     title->setStyleSheet("font-size:22px; font-weight:700;");
+    
+    auto *btnLogout = new QPushButton(tr("退出登录"), page);
+    btnLogout->setFixedWidth(100);
+    btnLogout->setStyleSheet("font-size:14px; padding:6px 12px;");
+    connect(btnLogout, &QPushButton::clicked, this, [this] {
+        // 清除用户信息
+        m_currentUser.reset();
+        m_tempUserId.clear();
+        m_tempUserName.clear();
+        m_currentRole = Role::Unknown;
+        // 返回欢迎页面
+        switchPage(Page::Welcome);
+    });
+    
+    topBar->addWidget(title);
+    topBar->addStretch();
+    topBar->addWidget(btnLogout);
+    
+    // 主内容区域
+    auto *layout = new QVBoxLayout();
+    layout->setAlignment(Qt::AlignCenter);
+    layout->setSpacing(18);
 
     auto *btnBorrow = new QPushButton(tr("我要借伞"), page);
     auto *btnReturn = new QPushButton(tr("我要还伞"), page);
@@ -461,11 +555,17 @@ QWidget* MainWindow::createDashboardPage()
     bottom->addStretch();
     bottom->addWidget(btnMap, 0, Qt::AlignRight);
 
-    layout->addWidget(title, 0, Qt::AlignCenter);
     layout->addWidget(btnBorrow, 0, Qt::AlignCenter);
     layout->addWidget(btnReturn, 0, Qt::AlignCenter);
     layout->addWidget(btnInstruction, 0, Qt::AlignCenter);
     layout->addLayout(bottom);
+    
+    // 组装页面布局
+    outerLayout->addLayout(topBar);
+    outerLayout->addStretch();
+    outerLayout->addLayout(layout);
+    outerLayout->addStretch();
+    
     return page;
 }
 
@@ -783,33 +883,9 @@ bool MainWindow::performFirstLogin()
 
 bool MainWindow::performLogin()
 {
-    const QString userId = m_inputUser ? m_inputUser->text().trimmed() : QString();
-    const QString realName = m_inputName ? m_inputName->text().trimmed() : QString();
-    const QString password = m_inputPass ? m_inputPass->text() : QString();
-
-    if (userId.isEmpty() || realName.isEmpty() || password.isEmpty()) {
-        QMessageBox::warning(this, tr("提示"), tr("请输入账号、姓名和密码"));
-        return false;
-    }
-
-    if (!DatabaseManager::init()) {
-        QMessageBox::critical(this, tr("数据库错误"), tr("无法连接到本地 MySQL，请检查服务是否已启动。"));
-        return false;
-    }
-
-    // 调用密码校验逻辑（明文密码比较）
-    auto record = DatabaseManager::fetchUserByIdAndNameAndPassword(userId, realName, password);
-    if (!record) {
-        QMessageBox::warning(this, tr("登录失败"), tr("账号、姓名或密码错误，请检查输入。"));
-        return false;
-    }
-
-    m_currentRole = (record->role == 1) ? Role::Staff : Role::Student;
-    m_currentUser = std::make_unique<User>(record->userId, record->realName, record->credit, record->role);
-
-    updateRoleLabel();
-    updateProfileFromUser();
-    QMessageBox::information(this, tr("登录成功"), tr("已从数据库加载用户信息。"));
-    return true;
+    // 这个函数现在不再使用，登录逻辑已移到createLoginPage的lambda中
+    // 保留此函数以防其他地方调用
+    QMessageBox::warning(this, tr("错误"), tr("此函数已废弃，请使用页面内的登录逻辑"));
+    return false;
 }
 
