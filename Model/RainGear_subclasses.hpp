@@ -4,7 +4,7 @@
 #pragma once
 
 #include <QString>
-#include "RainGear.h"
+#include "RainGear.hpp"
 #include "GlobalEnum.hpp"
 
 // 1. 普通塑料伞类

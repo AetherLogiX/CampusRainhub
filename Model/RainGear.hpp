@@ -18,6 +18,10 @@ public:
     virtual double get_deposit() const = 0; //获取押金金额
     virtual QString get_iconpath() const = 0; //获取图标资源路径
 
+    // 损坏状态访问
+    bool is_broken() const { return broken_flag; }
+    void set_broken(bool broken) { broken_flag = broken; }
+
 private:
     QString id; //加前缀str便于区分，每个伞的id都必须是唯一的
     GearType type; //雨具类型

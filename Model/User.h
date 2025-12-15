@@ -5,7 +5,7 @@
 
 #include <QString>
 #include <memory>
-#include "RainGear.h" 
+#include "RainGear.hpp" 
 
 class User {
 public:
@@ -16,6 +16,7 @@ public:
     const QString& get_id() const;
     const QString& get_name() const;
     double get_credit() const;
+    double get_balance() const { return get_credit(); } //别名兼容一下，都是返回余额的意思
     int get_role() const;
     const RainGear* get_current_gear() const;
 
@@ -39,5 +40,5 @@ private:
     QString name;
     double credit;  //一卡通余额
     int role;       //0:学生, 1:教职工, 9:管理员
-    std::unique_ptr<RainGear> current_gear; 
+    std::unique_ptr<RainGear> current_gear; //规定一个用户只能借一把伞，不能同时借多把伞
 };

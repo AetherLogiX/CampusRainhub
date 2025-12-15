@@ -3,6 +3,8 @@
 #include <optional>
 #include <QString>
 
+class QSqlDatabase;
+
 // 数据库管理器：负责连接MySQL并查询users表
 class DatabaseManager {
 public:

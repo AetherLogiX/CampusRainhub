@@ -4,20 +4,22 @@
 #include <memory>
 
 #include "GlobalEnum.hpp"
-#include "RainGear.h"
+#include "RainGear.hpp"
 #include "RainGearFactory.h"
 #include "RainGear_subclasses.hpp"
 #include "StationUtils.h"
 #include "Stationlocal.h"
 
-Stationlocal::Stationlocal(Station station, double posX, double posY):station(station),posX(posX),posY(posY){}
+Stationlocal::Stationlocal(Station station, double posX, double posY):station(station),posX(posX),posY(posY){
+    inventory.resize(N+1);  // 调整大小为N+1，索引0不使用，索引1-12对应slot_id
+}
 
 
 //判断雨具是否损坏，是否可用
 //index范围：1-12（与数据库slot_id一致）
 bool Stationlocal::is_gear_available(int index) const{
     if(index<1 || index>N) return false; //索引范围1-12
-    if(!inventory[index] || inventory[index]->broken_flag) return false;  
+    if(!inventory[index] || inventory[index]->is_broken()) return false;  
     return true;
 }
 
@@ -34,7 +36,7 @@ int Stationlocal::get_inventory_count() const{
 int Stationlocal::get_available_count() const{
     int count = 0;
     for(int i=1;i<=N;++i){
-        if(inventory[i] && !inventory[i]->broken_flag) count++;
+        if(inventory[i] && !inventory[i]->is_broken()) count++;
     }
     return count;
 }
@@ -52,13 +54,13 @@ std::unique_ptr<RainGear> Stationlocal::take_gear(int index){
 
 void Stationlocal::mark_unavailable(int index){
     if(index<1 || index>N || !inventory[index]) return; 
-    inventory[index]->broken_flag = true;
+    inventory[index]->set_broken(true);
     unavailable_gears.insert(index);
 }//标记雨具不可用
 
 void Stationlocal::mark_available(int index){
     if(index<1 || index>N || !inventory[index]) return; 
-    inventory[index]->broken_flag = false;
+    inventory[index]->set_broken(false);
     unavailable_gears.remove(index);
 } //标记雨具可用
 

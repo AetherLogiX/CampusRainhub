@@ -12,7 +12,7 @@ posX 和 posY 表示站点的地理位置坐标，inventory是该站点当前库
 #include <vector>
 
 #include "GlobalEnum.hpp"
-#include "RainGear.h"
+#include "RainGear.hpp"
 #include "RainGearFactory.h"
 #include "RainGear_subclasses.hpp"
 #include "StationUtils.h"
@@ -50,6 +50,6 @@ private:
     Station station;
     double posX,posY;
     bool online = true; //默认站点是在线状态
-    std::vector<std::unique_ptr<RainGear>> inventory(N+1);  
+    std::vector<std::unique_ptr<RainGear>> inventory;  // 索引0不使用，索引1-12对应slot_id  
     QSet<int> unavailable_gears;    
 };

@@ -6,7 +6,7 @@
 #include <memory>
 
 #include"GlobalEnum.hpp"
-#include"RainGear.h"
+#include"RainGear.hpp"
 #include"RainGear_subclasses.hpp"
 
 class RainGearFactory {

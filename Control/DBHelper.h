@@ -1,7 +1,9 @@
-#include<QSqlDatabase>
-#include<QSqlError>
-#include<QDebug>
-#include<QThread>
+#pragma once
+
+#include <QSqlDatabase>
+#include <QSqlError>
+#include <QDebug>
+#include <QThread>
 
 class DBHelper{
 public:
