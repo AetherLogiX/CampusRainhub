@@ -32,8 +32,7 @@ private:
         Dashboard,
         GearManage,
         UserManage,
-        OrderManage,
-        SystemSettings
+        OrderManage
     };
 
     void setupUi();
@@ -42,7 +41,7 @@ private:
     QWidget* createGearManagePage();
     QWidget* createUserManagePage();
     QWidget* createOrderManagePage();
-    QWidget* createSystemSettingsPage();
+    void handleLogout();
     void switchPage(Page page);
     
     // 地图相关
@@ -69,7 +68,9 @@ private:
     QPushButton *m_navGearManage { nullptr };
     QPushButton *m_navUserManage { nullptr };
     QPushButton *m_navOrderManage { nullptr };
-    QPushButton *m_navSystemSettings { nullptr };
+    
+    // 管理员信息标签
+    QLabel *m_adminLabel { nullptr };
     
     // 定时刷新（实现实时同步）
     QTimer *m_refreshTimer { nullptr };
