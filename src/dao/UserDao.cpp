@@ -41,7 +41,7 @@ std::optional<User> UserDao::selectByIdAndName(QsqlDatabase& db, const QString& 
 //update_password
 bool UserDao::updatePassword(QsqlDatabase& db, const QString& id, const QString& name,const QString& newPassword){
     QSqlQuery query(db);
-    query.prepare(QStringLiteral("UPDATE users SET password = :newpwd WHERE user_id = :uid AND real_name = :name"));
+    query.prepare(QStringLiteral("UPDATE users SET password = :newpwd,is_active = 1 WHERE user_id = :uid AND real_name = :name"));
     query.bindValue(":newpwd",newPassword);
     query.bindValue(":uid",id);
     query.bindValue(":name",name);
