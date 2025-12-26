@@ -32,11 +32,20 @@ bool AuthService::verifyPassword(const QString& id, const QString& password){
     return user->get_password()==password;
 }
 
-void AuthService::activateUser(const QString& id, const QString& name, const QString& password){
+bool AuthService::activateUser(const QString& id, const QString& name, const QString& password){
     QSqlDatabase db=ConnectionPool::getThreadLocalConnection();
     if(!db.isOpen()){
         qCritical() << "数据库连接失败";
-        return;
+        return false;
     }
-    userDao.updatePassword(db,id,name,password);
+    if(!db.transaction()){
+        qCritical() << "数据库事务开启失败";
+        return false;
+    }
+    bool success=userDao.updatePassword(db,id,name,password);
+    if(!success){
+        db.rollback();
+        return false;
+    }
+    return db.commit();
 }

@@ -23,7 +23,7 @@ public:
     //验证密码
     bool verifyPassword(const QString& id, const QString& password);
     //激活账户并设置密码
-    void activateUser(const QString& id, const QString& name, const QString& password);
+    bool activateUser(const QString& id, const QString& name, const QString& password);
 private:
     UserDao userDao;
 };
