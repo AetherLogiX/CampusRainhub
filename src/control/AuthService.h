@@ -17,6 +17,7 @@ public:
         UserNotFound, //学号不存在
         NameMismatch, //姓名不匹配
         DatabaseError, //数据库连接失败
+        AdminNotAllowed, //管理员账号不能在客户端登录
     };
     //登录检查,先判断账号密码是否合法
     LoginStatus checkLogin(const QString& id, const QString& name);

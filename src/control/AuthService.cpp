@@ -13,6 +13,8 @@ AuthService::LoginStatus AuthService::checkLogin(const QString& id, const QStrin
         return LoginStatus::UserNotFound; //学号不存在
     }else if(user->get_name()!=name){
         return LoginStatus::NameMismatch; //姓名不匹配
+    }else if(user->get_role()==9){
+        return LoginStatus::AdminNotAllowed; //管理员账号不能在客户端登录
     }else if(user->get_is_active()==0){
         return LoginStatus::SuccessFirstTime; //首次login in，UI跳转设置新密码
     }
