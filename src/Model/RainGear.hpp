@@ -18,9 +18,10 @@ public:
     GearStatus get_status() const { return status; }
     Station get_station_id() const { return station_id; }
     int get_slot_id() const { return slot_id; }
+    bool is_available() const { return status == GearStatus::Available; }  //唯一可借状态
 
     //setters
-    void set_status(GearStatus status) { this->status = status; }
+    void set_status(GearStatus s) { this->status = s; }
     void set_station_id(Station station_id) { this->station_id = station_id; }
     void set_slot_id(int slot_id) { this->slot_id = slot_id; }
 
