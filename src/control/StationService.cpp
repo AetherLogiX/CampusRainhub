@@ -3,7 +3,7 @@
 #include <QDebug>
 
 //获取所有站点
-QVector<std::unique_ptr<Stationlocal>> StationService::getAllStations() {
+std::vector<std::unique_ptr<Stationlocal>> StationService::getAllStations() {
     auto db = ConnectionPool::getThreadLocalConnection();
     if (!db.isOpen()) return {};
     return stationDao.selectAll(db);
