@@ -61,6 +61,31 @@ ServiceResult BorrowService::returnGear(const QString& userId, const QString& ge
     auto db = ConnectionPool::getThreadLocalConnection();
     if (!db.isOpen()) return {false, "数据库连接失败"};
 
+    //添加雨具对应槽位的判断
+    auto gear = gearDao.selectById(db, gearId);
+    if (!gear) return {false, "雨具信息异常(ID不存在)"};
+    bool isSlotValid = false;
+    GearType type = gear->get_type();
+    //根据雨具类型判断槽位是否合法
+    switch (type) {
+        case GearType::StandardPlastic:   //普通塑料伞: 1-4
+            if (slotId >= 1 && slotId <= 4) isSlotValid = true;
+            break;
+        case GearType::PremiumWindproof:  //高质量抗风伞: 5-8
+            if (slotId >= 5 && slotId <= 8) isSlotValid = true;
+            break;
+        case GearType::Sunshade:          //专用遮阳伞: 9-10
+            if (slotId >= 9 && slotId <= 10) isSlotValid = true;
+            break;
+        case GearType::Raincoat:          //雨衣: 11-12
+            if (slotId >= 11 && slotId <= 12) isSlotValid = true;
+            break;
+        default:
+            break;
+    }
+
+    if (!isSlotValid) {return {false, "归还位置错误！该类型雨具只能还到指定区域（请查看槽位说明）"};}
+
     //检查归还的槽位是否已经被占了
     if (gearDao.isSlotOccupied(db, stationId, slotId)) { return {false, "该槽位已有雨具，请更换槽位"}; }
 
@@ -72,7 +97,6 @@ ServiceResult BorrowService::returnGear(const QString& userId, const QString& ge
         return {false, "归还的雨具ID与订单不符"};
     }
 
-    auto gear=gearDao.selectById(db, gearId);
     if (!gear) return {false,"雨具信息异常"};
     QDateTime borrowTime = recordBox->get_borrow_time();
     QDateTime returnTime = QDateTime::currentDateTime(); 
