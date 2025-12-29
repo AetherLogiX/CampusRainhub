@@ -1,79 +1,148 @@
-# ☔ CampusRain
+# ☔ Campus RainHub
 
-> 校园智能雨具共享服务平台 | C++/Qt  + MySQL
+<div align="right">
 
-> **"让下雨天不再是校园出行的阻碍。"**
+[English](README.md) | [中文](README.zh-CN.md)
 
-## 项目背景 
+</div>
 
-作为一名在校生，大家肯定都遇到过这样的尴尬时刻：早八阳光明媚，下课却突降暴雨，被困在教学楼寸步难行。**RainHub** 的灵感正是来源于此。
+> Campus Smart Rain Gear Sharing System | C++/Qt + MySQL
 
-这不是一个简单的 CRUD 练习，而是一个尝试解决校园“最后一公里”避雨问题的完整解决方案。在这个项目中，我并没有依赖现成的后端框架，而是基于 **C++ Qt** 和 **MySQL** 构建了一套**双客户端架构（用户端 + 管理端）**，并手动实现了完整的**业务逻辑层（Service）**与**数据访问层（DAO）**的解耦。
+> **"No more being trapped in buildings on rainy days."**
 
-## 项目结构 (Project Structure)
+## Project Background
 
-基于 `src` 源码目录的核心结构说明：
+Every student has experienced this: you leave home in the morning with clear skies, but when class ends, it suddenly starts pouring. You're stuck in the building—either wait for the rain to stop or make a run for it. Neither option is great.
 
-Plaintext
+That's why this project exists.
+
+The idea is simple: place smart terminals around campus where students can borrow and return umbrellas 24/7, just like shared power banks.
+
+## Project Structure
 
 ```
 Rainhub/
-├── sql/                    # 数据库初始化与测试脚本 (.sql)
+├── sql/                    # Database scripts
+│   ├── init_db.sql        # Initialize table structure
+│   └── data_insert.sql    # Test data
 ├── src/
-│   ├── admin_ui/           # 管理员后台界面逻辑
-│   ├── client_ui/          # 用户终端界面逻辑
-│   ├── control/            # [核心业务层] 包含 AuthService, BorrowService 等
-│   ├── dao/                # [数据持久层] 封装 SQL 操作 (GearDao, UserDao 等)
-│   ├── Model/              # 数据实体类 (User, RainGear)
-│   └── main.cpp            # 程序入口
-├── resources/              # 图标与地图资源文件
-└── CMakeLists.txt          # 构建配置
+│   ├── admin_ui/          # Admin dashboard UI
+│   ├── client_ui/         # Client UI
+│   │   └── assets/        # UI styles and resources
+│   ├── control/           # Business logic layer (Service)
+│   │   ├── AuthService.cpp
+│   │   ├── BorrowService.cpp
+│   │   └── Admin_*.cpp    # Admin-related services
+│   ├── dao/               # Data access layer
+│   │   ├── UserDao.cpp
+│   │   ├── GearDao.cpp
+│   │   └── StationDao.cpp
+│   ├── Model/             # Data models
+│   │   ├── User.cpp
+│   │   └── RainGear.cpp
+│   └── utils/             # Utility classes
+├── assets/                # Resource files (icons, map configs)
+├── third_party/           # Third-party libraries (MySQL DLL)
+└── CMakeLists.txt         # Build configuration
 ```
 
-## 核心功能
+## Features
 
-### 用户终端
+### Client Application
 
-- **自助借还**：可视化的雨具槽位选择，就像借共享充电宝一样简单。
-- **实时地图**：查看校园内所有站点的雨具库存（数据实时同步）。
-- **账户体系**：支持学生/教职工身份切换，余额管理。
+- **Borrow/Return Gear**: Use campus card to select station and slot for borrowing/returning rain gear
+- **Real-time Map**: View inventory status of all stations with real-time updates
+- **Account Management**: Support student/staff roles, balance top-up, view borrowing history
 
-### 管理员后台 (Admin Dashboard)
+### Admin Dashboard
 
-- **设备监控**：远程监控各站点状态，识别故障槽位。
-- **数据大屏**：通过 `Admin_OrdersService` 统计每日流水与借还高峰。
-- **库存调度**：通过 `Admin_GearService` 管理雨具的投放与回收。
+- **Station Monitoring**: View online status and inventory of all stations
+- **Gear Management**: Add, delete gear, modify status (available/borrowed/faulty)
+- **User Management**: View user list and manage user information
+- **Order Statistics**: View recent borrowing records and analyze usage
 
-## 技术栈
+## Tech Stack
 
-- **开发语言**: C++ 17
-- **GUI 框架**: Qt 6.5 (Qt Widgets) - 使用 QSS 进行现代化 UI 美化
-- **数据库**: MySQL 8.0 - 使用 `QSqlDatabase` 连接池技术
-- **设计模式**:
-  - **Factory Pattern**: 用于创建不同类型的雨具 (`RainGearFactory`)
-  - **DAO Pattern**: 实现业务与数据的分离
-  - **Singleton**: 用于数据库连接管理 (`DatabaseManager`)
+- **C++ 17** - Main development language
+- **Qt 6.9.3** - GUI framework with QSS styling
+- **MySQL 8.0** - Database, connected via Qt SQL module
+- **CMake** - Build system
 
-## RUN_GUIDE
+### Design Patterns
 
-1. **环境准备**: 确保已安装 Qt 6.x (MinGW/MSVC) 及 MySQL 8.0。
+- **Factory Pattern**: Create different types of rain gear (umbrella, raincoat, etc.)
+- **DAO Pattern**: Separation of data access layer and business logic layer
+- **Singleton Pattern**: Database connection management
 
-2. **数据库配置**:
+## Quick Start
 
-   - 在 MySQL 中创建一个名为 `rainhub_db` 的数据库。
-   - 运行 `sql/init_db.sql` 初始化表结构。
-   - 运行 `sql/data_insert.sql` 导入测试数据。
+### Requirements
 
-3. **修改配置**:
+- Qt 6.x (MinGW or MSVC)
+- MySQL 8.0
+- CMake 3.16+
 
-   - 打开 `src/control/DatabaseManager.cpp`，修改 `setUserName` 和 `setPassword` 为你的本地配置。
+### Setup Steps
 
-4. **编译运行**:
+1. **Create Database**
 
-   Bash
-
+   ```sql
+   CREATE DATABASE rainhub_db;
    ```
-   mkdir build && cd build
+
+2. **Initialize Database**
+
+   - Run `sql/init_db.sql` to create table structure
+   - Run `sql/data_insert.sql` to import test data
+
+3. **Configure Database**
+
+   Open `src/control/DatabaseManager.cpp` and modify database username and password:
+
+   ```cpp
+   db.setUserName("your_mysql_username");
+   db.setPassword("your_mysql_password");
+   ```
+
+4. **Build and Run**
+
+   ```powershell
+   # Navigate to project directory
+   cd C:\Users\hdcqW\Desktop\Rainhub
+   
+   # Enter build directory
+   cd build
+   
+   # Configure project (if CMakeLists.txt was modified)
    cmake ..
-   cmake --build .
+   
+   # Build
+   E:/Qt/Tools/mingw1310_64/bin/mingw32-make.exe
+   
+   # Run client
+   cd bin
+   .\RainHub.exe
+   
+   # Or run admin dashboard
+   .\RainHub_Admin.exe
    ```
+
+   > If `mingw32-make` is added to system PATH, you can use `mingw32-make` directly instead of the full path
+
+## Development Notes
+
+- Project uses layered architecture: UI Layer → Service Layer → DAO Layer → Database
+- Admin and user login are completely separated; admin accounts cannot log in to client app
+- UI styling uses QSS with deep blue gradient theme
+- Map data uses JSON configuration; station coordinates and descriptions are read from config file, inventory data is fetched from database in real-time
+
+## TODO
+
+- Customer service feature in client app
+- Push notifications (borrow/return reminders)
+- Server development
+- More statistical charts
+
+------
+
+If you find this project interesting, feel free to Star ⭐
