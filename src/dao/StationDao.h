@@ -21,14 +21,20 @@ struct StationStatsDTO {
     int brokenCount;
 };
 
+// 站点地图信息DTO，用于地图显示
+struct StationMapInfo {
+    int availableCount;  // 可用库存数量
+    bool isOnline;      // 在线状态
+};
+
 class StationDao{
 public:
     //获取所有站点的完整信息
     std::vector<std::unique_ptr<Stationlocal>> selectAll(QSqlDatabase& db); 
     //根据站点ID获取站点信息
     std::unique_ptr<Stationlocal> selectById(QSqlDatabase& db, Station station);
-    //获取各站点的可用库存数量（用于地图显示）
-    QMap<int, int> selectStationInventoryCounts(QSqlDatabase& db);
+    //获取各站点的地图信息（库存数量和在线状态，用于地图显示）
+    QMap<int, StationMapInfo> selectStationMapInfo(QSqlDatabase& db);
     
     //管理员Part
     QVector<StationStatsDTO> selectAllWithStats(QSqlDatabase& db); //获取所有站点及其雨具统计

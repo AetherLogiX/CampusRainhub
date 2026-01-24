@@ -53,7 +53,7 @@ void MapPage::setupUi()
     topBar->addWidget(btnBack);
 
     // 图例说明
-    auto *legendLabel = new QLabel(tr("🟢 库存充足(≥5)  🟡 库存紧张(2-4)  🔴 库存不足(<2)"), card);
+    auto *legendLabel = new QLabel(tr("🟢 库存充足(≥5)  🟡 库存紧张(2-4)  🔴 库存不足(<2)  ⚫ 站点离线"), card);
     legendLabel->setStyleSheet(Styles::Labels::hint());
     legendLabel->setAlignment(Qt::AlignCenter);
 
@@ -89,8 +89,8 @@ void MapPage::loadMapStations()
     // 1. 从 JSON 读取静态配置（站点名称、坐标、描述）- 极快
     QMap<int, StationConfig> stationConfigs = MapConfigLoader::loadStationConfigs();
     
-    // 2. 从数据库读取动态数据（只查库存数量）- 轻量查询
-    QMap<int, int> inventoryCounts = m_stationService->getStationInventoryCounts();
+    // 2. 从数据库读取动态数据（库存数量和在线状态）- 一次查询获取所有信息
+    QMap<int, StationMapInfo> stationMapInfo = m_stationService->getStationMapInfo();
     
     // 计算容器尺寸
     int containerWidth = m_mapContainer->width();
@@ -107,17 +107,21 @@ void MapPage::loadMapStations()
         double posY = cfg.posY;
         QString description = cfg.description;
         
-        // 从数据库结果获取库存数量，如果没查到默认为0
-        int availableCount = inventoryCounts.value(stationId, 0);
+        // 从数据库结果获取库存数量和在线状态
+        StationMapInfo info = stationMapInfo.value(stationId, {0, true});  // 默认：库存0，在线
+        int availableCount = info.availableCount;
+        bool isOnline = info.isOnline;
         
         // 创建站点按钮
         auto *stationBtn = new QPushButton(m_mapContainer);
         stationBtn->setFixedSize(24, 24);
         stationBtn->setCursor(Qt::PointingHandCursor);
         
-        // 根据库存数量设置颜色
+        // 根据在线状态和库存数量设置颜色
         QString color;
-        if (availableCount >= 5) {
+        if (!isOnline) {
+            color = "#95a5a6";  // 灰色 - 站点离线（优先级最高）
+        } else if (availableCount >= 5) {
             color = "#2ecc71";  // 绿色 - 库存充足
         } else if (availableCount >= 2) {
             color = "#f1c40f";  // 黄色 - 库存紧张
@@ -139,15 +143,18 @@ void MapPage::loadMapStations()
         ).arg(color));
         
         // 设置工具提示
-        stationBtn->setToolTip(QString("%1\n可借雨具：%2 把\n%3")
-            .arg(name).arg(availableCount).arg(description));
+        QString statusText = isOnline ? tr("在线") : tr("离线");
+        stationBtn->setToolTip(QString("%1\n状态：%2\n可借雨具：%3 把\n%4")
+            .arg(name).arg(statusText).arg(availableCount).arg(description));
         
         // 点击显示详细信息
-        connect(stationBtn, &QPushButton::clicked, this, [this, name, availableCount, description]() {
+        connect(stationBtn, &QPushButton::clicked, this, [this, name, availableCount, description, isOnline]() {
+            QString statusText = isOnline ? tr("🟢 在线") : tr("🔴 离线");
             QString msg = QString("<h3>%1</h3>"
-                "<p><b>可借雨具数量：</b>%2 把</p>"
-                "<p><b>站点说明：</b>%3</p>")
-                .arg(name).arg(availableCount).arg(description);
+                "<p><b>在线状态：</b>%2</p>"
+                "<p><b>可借雨具数量：</b>%3 把</p>"
+                "<p><b>站点说明：</b>%4</p>")
+                .arg(name).arg(statusText).arg(availableCount).arg(description);
             QMessageBox::information(this, tr("站点信息"), msg);
         });
         

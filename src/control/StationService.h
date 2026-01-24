@@ -12,8 +12,8 @@ public:
     std::vector<std::unique_ptr<Stationlocal>> getAllStations();
     //获取单个站点详情
     std::unique_ptr<Stationlocal> getStationDetail(Station stationId);
-    //获取各站点的可用库存数量（用于地图显示）
-    QMap<int, int> getStationInventoryCounts();
+    //获取各站点的地图信息（库存数量和在线状态，用于地图显示）
+    QMap<int, StationMapInfo> getStationMapInfo();
     
 private:
     StationDao stationDao;

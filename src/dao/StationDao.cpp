@@ -104,38 +104,44 @@ std::unique_ptr<Stationlocal> StationDao::selectById(QSqlDatabase& db, Station s
     return nullptr;
 }
 
-//获取各站点的可用库存数量
-QMap<int, int> StationDao::selectStationInventoryCounts(QSqlDatabase& db) {
-    QMap<int, int> result;
+//获取各站点的地图信息（库存数量和在线状态，用于地图显示）
+QMap<int, StationMapInfo> StationDao::selectStationMapInfo(QSqlDatabase& db) {
+    QMap<int, StationMapInfo> result;
     
-    //查出所有站点ID，确保即使没有雨具的站点也会显示
+    // 先查询所有站点，初始化在线状态和库存数量
     QSqlQuery stationQuery(db);
-    stationQuery.prepare(QStringLiteral("SELECT station_id FROM station ORDER BY station_id"));
+    stationQuery.prepare(QStringLiteral("SELECT station_id, status FROM station ORDER BY station_id"));
     if (stationQuery.exec()) {
         while (stationQuery.next()) {
-            int stationId = stationQuery.value(0).toInt();
-            result[stationId] = 0;  //初始化为0
+            int stationId = stationQuery.value("station_id").toInt();
+            bool isOnline = (stationQuery.value("status").toInt() == 1);
+            StationMapInfo info;
+            info.isOnline = isOnline;
+            info.availableCount = 0;  // 初始化为0
+            result[stationId] = info;
         }
     }
     
-    //使用聚合查询统计每个站点的可用雨具数量
-    QSqlQuery query(db);
-    query.prepare(QStringLiteral(
+    // 使用聚合查询统计每个站点的可用雨具数量
+    QSqlQuery gearQuery(db);
+    gearQuery.prepare(QStringLiteral(
         "SELECT station_id, COUNT(*) as available_count "
         "FROM raingear "
         "WHERE station_id IS NOT NULL AND status = 1 "
         "GROUP BY station_id"
     ));
     
-    if (!query.exec()) {
-        qCritical() << "查询站点库存失败:" << query.lastError().text();
+    if (!gearQuery.exec()) {
+        qCritical() << "查询站点库存失败:" << gearQuery.lastError().text();
         return result;
     }
     
-    while (query.next()) {
-        int stationId = query.value("station_id").toInt();
-        int count = query.value("available_count").toInt();
-        result[stationId] = count;
+    while (gearQuery.next()) {
+        int stationId = gearQuery.value("station_id").toInt();
+        int count = gearQuery.value("available_count").toInt();
+        if (result.contains(stationId)) {
+            result[stationId].availableCount = count;
+        }
     }
     
     return result;
