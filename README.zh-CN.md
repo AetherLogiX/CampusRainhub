@@ -68,7 +68,7 @@ Rainhub/
 │   ├── dao/                # 数据访问层（DAO），封装所有 SQL 操作
 │   ├── model/              # 数据实体类（User, RainGear等）
 │   └── utils/              # 工具类（线程级数据库连接池/静态站点数据加载类）
-├── assets/                 # 静态资源（图标、地图JSON配置、QSS样式表）
+├── assets/                 # 静态资源（图标、地图JSON配置）
 ├── third_party/            # 第三方依赖（MySQL Connector/C++ 动态库）
 └── CMakeLists.txt          # CMake 构建脚本
 ```
